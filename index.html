@@ -1,0 +1,312 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursos de Tecnología - EduTech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white py-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl font-bold">EduTech: Cursos de Tecnología</h1>
+            <p class="mt-2 text-lg">Aprende habilidades tecnológicas de vanguardia</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto py-10 px-4">
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Curso 1: Desarrollo Web -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <img src="https://jhasenstudio.com/wp-content/uploads/2024/10/desarrollo-web-scaled.jpg" alt="Desarrollo Web" class="w-full h-48 object-cover rounded-t-lg">
+                <h2 class="text-2xl font-semibold mt-4">Desarrollo Web Full Stack</h2>
+                <p class="mt-2 text-gray-600">
+                    Aprende a crear sitios web modernos con HTML, CSS, JavaScript, y frameworks como <u class="font-bold">React y Node.js</u>. Domina el desarrollo frontend y backend.
+                </p>
+                <ul class="mt-4 space-y-2 text-gray-700">
+                    <li><strong>Perfil:</strong> Principiantes y desarrolladores intermedios interesados en <u class="font-bold">crear aplicaciones web</u>.</li>
+                    <li><strong>Fecha de Inicio:</strong> 15 de septiembre de 2025</li>
+                    <li><strong>Costo:</strong> $299 USD (pago único)</li>
+                </ul>
+                <button class="mt-6 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 enroll-btn" data-course="Desarrollo Web Full Stack">Inscribirse</button>
+            </div>
+
+            <!-- Curso 2: Ciencia de Datos -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <img src="https://media.licdn.com/dms/image/v2/D5612AQHUNHfYpce8WA/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1700701532384?e=2147483647&v=beta&t=AXrO04t_duadriQRozWijStj-67wCb1M-mgIwbRrXxI" alt="Ciencia de Datos" class="w-full h-48 object-cover rounded-t-lg">
+                <h2 class="text-2xl font-semibold mt-4">Ciencia de Datos con Python</h2>
+                <p class="mt-2 text-gray-600">
+                    Conviértete en un experto en análisis de datos usando <u class="font-bold">Python, Pandas y Machine Learning</u>. Aprende a visualizar datos y tomar decisiones basadas en ellos.
+                </p>
+                <ul class="mt-4 space-y-2 text-gray-700">
+                    <li><strong>Perfil:</strong> Profesionales y estudiantes interesados en <u class="font-bold">análisis de datos</u> y estadísticas.</li>
+                    <li><strong>Fecha de Inicio:</strong> 1 de octubre de 2025</li>
+                    <li><strong>Costo:</strong> $349 USD (pago único)</li>
+                </ul>
+                <button class="mt-6 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 enroll-btn" data-course="Ciencia de Datos con Python">Inscribirse</button>
+            </div>
+
+            <!-- Curso 3: Ciberseguridad -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <img src="https://starkcloud.com/wp-content/uploads/2025/01/Que-es-Ciberseguridad.webp" alt="Ciberseguridad" class="w-full h-48 object-cover rounded-t-lg">
+                <h2 class="text-2xl font-semibold mt-4">Ciberseguridad Básica</h2>
+                <p class="mt-2 text-gray-600">
+                    Protege sistemas y redes aprendiendo sobre <u class="font-bold">ethical hacking, firewalls y criptografía</u>. Ideal para iniciar en ciberseguridad.
+                </p>
+                <ul class="mt-4 space-y-2 text-gray-700">
+                    <li><strong>Perfil:</strong> Interesados en <u class="font-bold">seguridad informática</u> sin experiencia previa.</li>
+                    <li><strong>Fecha de Inicio:</strong> 20 de octubre de 2025</li>
+                    <li><strong>Costo:</strong> $279 USD (pago único)</li>
+                </ul>
+                <button class="mt-6 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 enroll-btn" data-course="Ciberseguridad Básica">Inscribirse</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Asistente Virtual Button -->
+    <button id="virtual-assistant-btn" class="fixed bottom-10 right-10 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 7l6.16-3.422a1 1 0 00.584-.966V9.422L12 12.844l-6.16-3.422a1 1 0 00-.584.966v7.19a1 1 0 00.584.966L12 21z"></path>
+        </svg>
+    </button>
+
+    <!-- Modal para Asistente Virtual -->
+    <div id="assistant-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-4">Asistente Virtual EduTech</h2>
+            <p id="assistant-message" class="mb-4">Presiona el botón y di: "Verificar perfil para [nombre del curso]" o "Inscribirme en [nombre del curso]".</p>
+            <button id="voice-btn" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Activar Voz</button>
+            <button id="close-modal" class="mt-4 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Cerrar</button>
+            <div id="enrollment-form" class="hidden mt-4">
+                <h3 class="text-xl font-semibold mb-2">Formulario de Inscripción</h3>
+                <div class="space-y-4">
+                    <input id="form-name" type="text" placeholder="Nombre" class="w-full p-2 border rounded">
+                    <input id="form-email" type="email" placeholder="Correo Electrónico" class="w-full p-2 border rounded">
+                    <input id="form-course" type="text" placeholder="Curso" class="w-full p-2 border rounded" readonly>
+                    <button id="submit-form" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-blue-600 text-white py-4">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 EduTech. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Cursos y sus perfiles
+        const courses = {
+            "Desarrollo Web Full Stack": {
+                profile: "Principiantes y desarrolladores intermedios interesados en crear aplicaciones web.",
+                description: "Este curso es ideal si tienes conocimientos básicos de programación o quieres aprender a desarrollar sitios web desde cero."
+            },
+            "Ciencia de Datos con Python": {
+                profile: "Profesionales y estudiantes interesados en análisis de datos y estadísticas.",
+                description: "Perfecto para quienes desean trabajar con datos, tienen interés en estadísticas o experiencia básica en Python."
+            },
+            "Ciberseguridad Básica": {
+                profile: "Interesados en seguridad informática sin experiencia previa.",
+                description: "Apto para cualquier persona curiosa por la ciberseguridad, no se requiere experiencia técnica previa."
+            }
+        };
+
+        // Inicializar reconocimiento de voz
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-ES';
+        let isListening = false;
+
+        // Elementos del DOM
+        const assistantBtn = document.getElementById('virtual-assistant-btn');
+        const assistantModal = document.getElementById('assistant-modal');
+        const voiceBtn = document.getElementById('voice-btn');
+        const closeModal = document.getElementById('close-modal');
+        const assistantMessage = document.getElementById('assistant-message');
+        const enrollmentForm = document.getElementById('enrollment-form');
+        const formName = document.getElementById('form-name');
+        const formEmail = document.getElementById('form-email');
+        const formCourse = document.getElementById('form-course');
+        const submitForm = document.getElementById('submit-form');
+        const enrollButtons = document.querySelectorAll('.enroll-btn');
+
+        // Funciones de síntesis de voz
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Mostrar/Ocultar modal
+        assistantBtn.addEventListener('click', () => {
+            assistantModal.classList.remove('hidden');
+            speak("Hola, soy el asistente virtual de EduTech. Di 'Verificar perfil para' seguido del nombre del curso, o 'Inscribirme en' seguido del curso.");
+        });
+
+        closeModal.addEventListener('click', () => {
+            assistantModal.classList.add('hidden');
+            enrollmentForm.classList.add('hidden');
+            recognition.stop();
+            isListening = false;
+            voiceBtn.textContent = 'Activar Voz';
+        });
+
+        // Manejo de reconocimiento de voz
+        voiceBtn.addEventListener('click', () => {
+            if (!isListening) {
+                recognition.start();
+                voiceBtn.textContent = 'Escuchando...';
+                isListening = true;
+            } else {
+                recognition.stop();
+                voiceBtn.textContent = 'Activar Voz';
+                isListening = false;
+            }
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            assistantMessage.textContent = `Dijiste: ${transcript}`;
+            handleVoiceCommand(transcript);
+        };
+
+        recognition.onend = () => {
+            if (isListening) {
+                recognition.start(); // Reiniciar si sigue escuchando
+            } else {
+                voiceBtn.textContent = 'Activar Voz';
+            }
+        };
+
+        // Procesar comandos de voz
+        function handleVoiceCommand(transcript) {
+            // Verificar perfil
+            if (transcript.includes('verificar perfil para')) {
+                const courseName = extractCourseName(transcript, 'verificar perfil para');
+                if (courses[courseName]) {
+                    const response = `El perfil para ${courseName} es: ${courses[courseName].description}`;
+                    assistantMessage.textContent = response;
+                    speak(response);
+                } else {
+                    const error = "No reconocí el curso. Por favor, intenta de nuevo.";
+                    assistantMessage.textContent = error;
+                    speak(error);
+                }
+            }
+            // Inscribirse
+            else if (transcript.includes('inscribirme en')) {
+                const courseName = extractCourseName(transcript, 'inscribirme en');
+                if (courses[courseName]) {
+                    enrollmentForm.classList.remove('hidden');
+                    formCourse.value = courseName;
+                    const response = `Por favor, di tu nombre para el formulario de inscripción a ${courseName}.`;
+                    assistantMessage.textContent = response;
+                    speak(response);
+                    currentStep = 'name';
+                } else {
+                    const error = "No reconocí el curso. Por favor, intenta de nuevo.";
+                    assistantMessage.textContent = error;
+                    speak(error);
+                }
+            }
+            // Rellenar formulario
+            else if (currentStep === 'name') {
+                formName.value = transcript;
+                const response = "Ahora di tu correo electrónico.";
+                assistantMessage.textContent = response;
+                speak(response);
+                currentStep = 'email';
+            } else if (currentStep === 'email') {
+                formEmail.value = transcript;
+                const response = "Formulario completado. Di 'enviar' para confirmar o 'cancelar' para cerrar.";
+                assistantMessage.textContent = response;
+                speak(response);
+                currentStep = 'submit';
+            } else if (currentStep === 'submit') {
+                if (transcript.includes('enviar')) {
+                    submitForm.click();
+                } else if (transcript.includes('cancelar')) {
+                    closeModal.click();
+                }
+            }
+        }
+
+        // Estado del formulario
+        let currentStep = null;
+
+        // Extraer nombre del curso
+        function extractCourseName(transcript, command) {
+            const coursePart = transcript.replace(command, '').trim();
+            for (const course in courses) {
+                if (coursePart.includes(course.toLowerCase())) {
+                    return course;
+                }
+            }
+            return null;
+        }
+
+        // Enviar formulario
+        submitForm.addEventListener('click', () => {
+            const response = `Formulario enviado para ${formCourse.value}. ¡Gracias por inscribirte!`;
+            assistantMessage.textContent = response;
+            speak(response);
+            enrollmentForm.classList.add('hidden');
+            setTimeout(() => closeModal.click(), 3000);
+        });
+
+        // Botones de inscripción manual
+        enrollButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const course = button.dataset.course;
+                assistantModal.classList.remove('hidden');
+                enrollmentForm.classList.remove('hidden');
+                formCourse.value = course;
+                assistantMessage.textContent = `Rellena el formulario para inscribirte en ${course}.`;
+                speak(`Rellena el formulario para inscribirte en ${course}.`);
+            });
+        });
+    </script>
+</body>
+</html>

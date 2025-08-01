@@ -1,0 +1,367 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducaOnline - Cursos con Asistente Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        #chatbot-header {
+            background: #2563eb;
+            color: white;
+            padding: 10px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        #chatbot-body {
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #chatbot-input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-top: 1px solid #e5e7eb;
+        }
+        #chatbot-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2563eb;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 sticky top-0 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold">EducaOnline</a>
+            <div class="space-x-4">
+                <a href="#home" class="hover:underline">Inicio</a>
+                <a href="#courses" class="hover:underline">Cursos</a>
+                <a href="#contact" class="hover:underline">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="bg-blue-500 text-white py-20">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Aprende con nuestro asistente virtual</h1>
+            <p class="text-lg mb-6">Explora nuestros cursos y deja que nuestro asistente te guíe hacia el aprendizaje perfecto.</p>
+            <a href="#courses" class="bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-200">Ver Cursos</a>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="courses" class="py-16">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-12">Nuestros Cursos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Curso 1 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="programacion">
+                    <h3 class="text-xl font-semibold mb-2">Programación en Python</h3>
+                    <p class="text-gray-600 mb-2">Aprende los fundamentos de Python y crea proyectos desde cero.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 15/08/2025 - 30/08/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $199</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 2 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="diseno">
+                    <h3 class="text-xl font-semibold mb-2">Diseño Gráfico con Adobe</h3>
+                    <p class="text-gray-600 mb-2">Domina Photoshop e Illustrator para crear diseños impactantes.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 01/09/2025 - 15/09/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $249</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 3 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="idiomas">
+                    <h3 class="text-xl font-semibold mb-2">Inglés Intermedio</h3>
+                    <p class="text-gray-600 mb-2">Mejora tu inglés con lecciones prácticas de conversación.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 20/08/2025 - 05/09/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $149</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 4 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="programacion">
+                    <h3 class="text-xl font-semibold mb-2">Desarrollo Web Full Stack</h3>
+                    <p class="text-gray-600 mb-2">Conviértete en desarrollador web con HTML, CSS, JS y Node.js.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 10/09/2025 - 25/09/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $299</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 5 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="diseno">
+                    <h3 class="text-xl font-semibold mb-2">Edición de Video con Premiere</h3>
+                    <p class="text-gray-600 mb-2">Crea videos profesionales con Adobe Premiere Pro.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 05/09/2025 - 20/09/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $199</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 6 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="idiomas">
+                    <h3 class="text-xl font-semibold mb-2">Francés para Principiantes</h3>
+                    <p class="text-gray-600 mb-2">Aprende francés desde cero con un enfoque práctico.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 15/08/2025 - 30/08/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $129</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 7 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="programacion">
+                    <h3 class="text-xl font-semibold mb-2">Inteligencia Artificial Básica</h3>
+                    <p class="text-gray-600 mb-2">Explora los fundamentos de la IA y sus aplicaciones.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 01/10/2025 - 15/10/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $249</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 8 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="diseno">
+                    <h3 class="text-xl font-semibold mb-2">Diseño UX/UI</h3>
+                    <p class="text-gray-600 mb-2">Crea interfaces intuitivas y atractivas para apps y webs.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 20/09/2025 - 05/10/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $229</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+                <!-- Curso 9 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 course-card" data-category="idiomas">
+                    <h3 class="text-xl font-semibold mb-2">Alemán Intermedio</h3>
+                    <p class="text-gray-600 mb-2">Perfecciona tu alemán con práctica intensiva.</p>
+                    <p class="text-gray-500 text-sm">Fecha de inscripción: 10/09/2025 - 25/09/2025</p>
+                    <p class="text-gray-500 text-sm">Precio: $159</p>
+                    <a href="#" class="text-blue-600 font-semibold hover:underline">Saber más</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="bg-gray-200 py-16">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-4">Contáctanos</h2>
+            <p class="text-gray-600 mb-6">¿Tienes alguna pregunta? Usa nuestro formulario o habla con nuestro asistente virtual.</p>
+            <div class="max-w-md mx-auto">
+                <input id="name" type="text" placeholder="Nombre" class="w-full p-3 mb-4 rounded">
+                <input id="email" type="email" placeholder="Correo electrónico" class="w-full p-3 mb-4 rounded">
+                <textarea id="message" placeholder="Mensaje" class="w-full p-3 mb-4 rounded"></textarea>
+                <button id="submit-form" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700">Enviar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-blue-600 text-white py-6">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 EducaOnline. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Chatbot -->
+    <div id="chatbot">
+        <div id="chatbot-header">Asistente Virtual</div>
+        <div id="chatbot-body">
+            <p>¡Hola! Soy tu asistente virtual. Puedo recomendarte cursos, darte fechas de inscripción, cotizaciones o ayudarte a rellenar el formulario con tu voz. ¿En qué te ayudo?</p>
+        </div>
+        <input id="chatbot-input" type="text" placeholder="Escribe aquí o usa voz...">
+    </div>
+    <div id="chatbot-toggle">🤖</div>
+
+    <!-- JavaScript -->
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelector(anchor.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Chatbot logic
+        const chatbot = document.getElementById('chatbot');
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const chatbotBody = document.getElementById('chatbot-body');
+        const chatbotInput = document.getElementById('chatbot-input');
+
+        chatbotToggle.addEventListener('click', () => {
+            chatbot.style.display = chatbot.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Course recommendation logic
+        const courses = [
+            { name: 'Programación en Python', category: 'programacion', inscription: '15/08/2025 - 30/08/2025', price: 199 },
+            { name: 'Diseño Gráfico con Adobe', category: 'diseno', inscription: '01/09/2025 - 15/09/2025', price: 249 },
+            { name: 'Inglés Intermedio', category: 'idiomas', inscription: '20/08/2025 - 05/09/2025', price: 149 },
+            { name: 'Desarrollo Web Full Stack', category: 'programacion', inscription: '10/09/2025 - 25/09/2025', price: 299 },
+            { name: 'Edición de Video con Premiere', category: 'diseno', inscription: '05/09/2025 - 20/09/2025', price: 199 },
+            { name: 'Francés para Principiantes', category: 'idiomas', inscription: '15/08/2025 - 30/08/2025', price: 129 },
+            { name: 'Inteligencia Artificial Básica', category: 'programacion', inscription: '01/10/2025 - 15/10/2025', price: 249 },
+            { name: 'Diseño UX/UI', category: 'diseno', inscription: '20/09/2025 - 05/10/2025', price: 229 },
+            { name: 'Alemán Intermedio', category: 'idiomas', inscription: '10/09/2025 - 25/09/2025', price: 159 }
+        ];
+
+        let userInterests = { programacion: 0, diseno: 0, idiomas: 0 };
+
+        document.querySelectorAll('.course-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const category = card.getAttribute('data-category');
+                userInterests[category]++;
+                recommendCourse();
+            });
+        });
+
+        function recommendCourse() {
+            const maxInterest = Math.max(...Object.values(userInterests));
+            if (maxInterest === 0) return;
+
+            const interestedCategory = Object.keys(userInterests).find(key => userInterests[key] === maxInterest);
+            const recommended = courses.filter(c => c.category === interestedCategory);
+            const randomCourse = recommended[Math.floor(Math.random() * recommended.length)];
+
+            addChatMessage(`Te recomiendo el curso "${randomCourse.name}". Fechas de inscripción: ${randomCourse.inscription}. Precio: $${randomCourse.price}. ¿Quieres más info?`);
+        }
+
+        function addChatMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            chatbotBody.appendChild(p);
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
+        }
+
+        // Form submission
+        document.getElementById('submit-form').addEventListener('click', () => {
+            addChatMessage('¡Mensaje enviado! (Funcionalidad de ejemplo)');
+        });
+
+        // Voice recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = false;
+
+            chatbotInput.addEventListener('focus', () => {
+                addChatMessage('Di "rellenar formulario" para empezar a llenar el formulario con voz.');
+            });
+
+            chatbotInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    processInput(chatbotInput.value);
+                    chatbotInput.value = '';
+                }
+            });
+
+            function processInput(input) {
+                input = input.toLowerCase();
+                if (input.includes('rellenar formulario')) {
+                    startFormFilling();
+                } else if (input.includes('recomendar curso')) {
+                    recommendCourse();
+                } else if (input.includes('cotización')) {
+                    const courseName = courses.find(c => input.includes(c.name.toLowerCase()));
+                    if (courseName) {
+                        addChatMessage(`La cotización para "${courseName.name}" es $${courseName.price}. Fechas: ${courseName.inscription}.`);
+                    } else {
+                        addChatMessage('Por favor, especifica el nombre del curso para la cotización.');
+                    }
+                } else {
+                    addChatMessage('No entendí. Prueba con "recomendar curso", "cotización [nombre del curso]" o "rellenar formulario".');
+                }
+            }
+
+            let formStep = 0;
+            const formFields = ['name', 'email', 'message'];
+
+            function startFormFilling() {
+                formStep = 0;
+                addChatMessage('Vamos a rellenar el formulario. Di tu nombre.');
+                recognition.start();
+            }
+
+            recognition.onresult = event => {
+                const transcript = event.results[0][0].transcript;
+                addChatMessage(`Dijiste: ${transcript}`);
+                document.getElementById(formFields[formStep]).value = transcript;
+
+                formStep++;
+                if (formStep < formFields.length) {
+                    addChatMessage(`Ahora di tu ${formFields[formStep] === 'email' ? 'correo electrónico' : 'mensaje'}.`);
+                    recognition.start();
+                } else {
+                    addChatMessage('Formulario completado. ¿Quieres enviar el mensaje? Di "enviar".');
+                    recognition.start();
+                }
+            };
+
+            recognition.onend = () => {
+                if (formStep === formFields.length && document.getElementById(formFields[formStep - 1]).value.toLowerCase().includes('enviar')) {
+                    addChatMessage('¡Mensaje enviado! (Funcionalidad de ejemplo)');
+                    formStep = 0;
+                }
+            };
+
+            recognition.onerror = event => {
+                addChatMessage(`Error en el reconocimiento de voz: ${event.error}`);
+            };
+        } else {
+            addChatMessage('Lo siento, tu navegador no soporta reconocimiento de voz.');
+        }
+    </script>
+</body>
+</html>

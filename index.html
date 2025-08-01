@@ -1,0 +1,337 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IndraX Tech - Cursos de Informática</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.10/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Datos de los cursos
+    const courses = [
+      { id: 1, name: "Introducción a la Programación", level: "Principiante", prereqs: "Ninguno", price: 100, description: "Aprende los fundamentos de la programación con Python.", image: "https://via.placeholder.com/150?text=Python" },
+      { id: 2, name: "Desarrollo Web con JavaScript", level: "Intermedio", prereqs: "Conocimientos básicos de programación", price: 150, description: "Crea aplicaciones web dinámicas.", image: "https://via.placeholder.com/150?text=Web" },
+      { id: 3, name: "Inteligencia Artificial Avanzada", level: "Avanzado", prereqs: "Programación intermedia y matemáticas", price: 200, description: "Explora redes neuronales y aprendizaje profundo.", image: "https://via.placeholder.com/150?text=AI" }
+    ];
+
+    const App = () => {
+      const [inputMethod, setInputMethod] = useState(null);
+      const [userInput, setUserInput] = useState("");
+      const [isListening, setIsListening] = useState(false);
+      const [suggestedCourse, setSuggestedCourse] = useState(null);
+      const [experience, setExperience] = useState("");
+      const [formData, setFormData] = useState({ name: "", email: "", courseId: null });
+      const [quote, setQuote] = useState(null);
+      const [step, setStep] = useState("welcome");
+
+      // Configuración de reconocimiento de voz
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+      if (recognition) {
+        recognition.lang = "es-ES";
+        recognition.interimResults = false;
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript.toLowerCase();
+          setUserInput(transcript);
+          setIsListening(false);
+          suggestCourse(transcript);
+        };
+        recognition.onend = () => setIsListening(false);
+      }
+
+      // Sugerir curso basado en entrada
+      const suggestCourse = (input) => {
+        let course = null;
+        if (input.includes("principiante") || input.includes("empezar") || input.includes("básico")) {
+          course = courses.find(c => c.level === "Principiante");
+        } else if (input.includes("intermedio") || input.includes("web") || input.includes("javascript")) {
+          course = courses.find(c => c.level === "Intermedio");
+        } else if (input.includes("avanzado") || input.includes("inteligencia artificial") || input.includes("avanzada")) {
+          course = courses.find(c => c.level === "Avanzado");
+        } else {
+          course = courses[0]; // Curso por defecto
+        }
+        setSuggestedCourse(course);
+        setStep("courseDetails");
+      };
+
+      // Manejar selección de imagen
+      const handleImageSelect = (courseId) => {
+        const course = courses.find(c => c.id === courseId);
+        setSuggestedCourse(course);
+        setStep("courseDetails");
+      };
+
+      // Verificar experiencia
+      const checkExperience = (exp) => {
+        setExperience(exp);
+        if (suggestedCourse.level === "Intermedio" && exp === "none") {
+          setSuggestedCourse(courses.find(c => c.level === "Principiante"));
+          alert("No tienes suficiente experiencia. Te recomendamos un curso para principiantes.");
+        } else if (suggestedCourse.level === "Avanzado" && (exp === "none" || exp === "beginner")) {
+          setSuggestedCourse(courses.find(c => c.level === "Intermedio"));
+          alert("No tienes suficiente experiencia. Te recomendamos un curso intermedio.");
+        }
+        setStep("quote");
+      };
+
+      // Generar cotización
+      const generateQuote = () => {
+        setQuote(suggestedCourse.price);
+        setStep("form");
+      };
+
+      // Manejar datos del formulario
+      const handleFormInput = (field, value) => {
+        setFormData({ ...formData, [field]: value });
+      };
+
+      // Enviar formulario
+      const submitForm = () => {
+        if (formData.name && formData.email && suggestedCourse) {
+          alert(`Inscripción enviada: ${formData.name}, ${formData.email}, Curso: ${suggestedCourse.name}`);
+          setStep("welcome");
+          setFormData({ name: "", email: "", courseId: null });
+          setSuggestedCourse(null);
+          setQuote(null);
+        } else {
+          alert("Por favor, completa todos los campos.");
+        }
+      };
+
+      // Iniciar reconocimiento de voz
+      const startVoiceInput = (field = null) => {
+        if (recognition) {
+          setIsListening(true);
+          recognition.start();
+          if (field) {
+            recognition.onresult = (event) => {
+              const transcript = event.results[0][0].transcript;
+              handleFormInput(field, transcript);
+              setIsListening(false);
+            };
+          }
+        } else {
+          alert("El reconocimiento de voz no está soportado en este navegador.");
+        }
+      };
+
+      return (
+        <div className="container mx-auto p-4">
+          <h1 className="text-3xl font-bold text-center mb-6">IndraX Tech - Cursos de Informática</h1>
+
+          {step === "welcome" && (
+            <div className="text-center">
+              <p className="mb-4">Bienvenido a IndraX Tech. Elige cómo quieres encontrar tu curso ideal:</p>
+              <div className="flex justify-center gap-4 mb-4">
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => setInputMethod("voice")}
+                >
+                  Usar Voz
+                </button>
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => setInputMethod("text")}
+                >
+                  Usar Texto
+                </button>
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => setInputMethod("image")}
+                >
+                  Seleccionar Imagen
+                </button>
+              </div>
+
+              {inputMethod === "voice" && (
+                <div>
+                  <p>Habla para describir tu nivel o interés (ej. "quiero un curso de programación básico").</p>
+                  <button
+                    className={`px-4 py-2 rounded ${isListening ? "bg-red-500" : "bg-green-500"} text-white`}
+                    onClick={() => startVoiceInput()}
+                  >
+                    {isListening ? "Escuchando..." : "Iniciar Voz"}
+                  </button>
+                </div>
+              )}
+
+              {inputMethod === "text" && (
+                <div>
+                  <input
+                    type="text"
+                    className="border p-2 w-full mb-2"
+                    placeholder="Describe tu nivel o interés"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                  />
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    onClick={() => suggestCourse(userInput.toLowerCase())}
+                  >
+                    Enviar
+                  </button>
+                </div>
+              )}
+
+              {inputMethod === "image" && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {courses.map(course => (
+                    <div key={course.id} className="text-center">
+                      <img src={course.image} alt={course.name} className="w-full h-32 object-cover mb-2" />
+                      <p>{course.name}</p>
+                      <button
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        onClick={() => handleImageSelect(course.id)}
+                      >
+                        Seleccionar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === "courseDetails" && suggestedCourse && (
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-4">Curso Sugerido: {suggestedCourse.name}</h2>
+              <p><strong>Descripción:</strong> {suggestedCourse.description}</p>
+              <p><strong>Nivel:</strong> {suggestedCourse.level}</p>
+              <p><strong>Prerrequisitos:</strong> {suggestedCourse.prereqs}</p>
+              <p className="mt-4">¿Cuál es tu nivel de experiencia?</p>
+              <div className="flex justify-center gap-4">
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => checkExperience("none")}
+                >
+                  Sin experiencia
+                </button>
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => checkExperience("beginner")}
+                >
+                  Principiante
+                </button>
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => checkExperience("intermediate")}
+                >
+                  Intermedio
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === "quote" && suggestedCourse && (
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-4">Cotización</h2>
+              <p>Curso: {suggestedCourse.name}</p>
+              <p>Costo: ${suggestedCourse.price}</p>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mt-4"
+                onClick={generateQuote}
+              >
+                Continuar con la inscripción
+              </button>
+            </div>
+          )}
+
+          {step === "form" && suggestedCourse && (
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-4">Formulario de Inscripción</h2>
+              <p>Curso: {suggestedCourse.name}</p>
+              <p>Costo: ${quote}</p>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  className="border p-2 w-full mb-2"
+                  placeholder="Nombre"
+                  value={formData.name}
+                  onChange={(e) => handleFormInput("name", e.target.value)}
+                />
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => startVoiceInput("name")}
+                >
+                  Ingresar nombre por voz
+                </button>
+              </div>
+              <div className="mb-4">
+                <input
+                  type="email"
+                  className="border p-2 w-full mb-2"
+                  placeholder="Correo electrónico"
+                  value={formData.email}
+                  onChange={(e) => handleFormInput("email", e.target.value)}
+                />
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => startVoiceInput("email")}
+                >
+                  Ingresar correo por voz
+                </button>
+              </div>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                onClick={submitForm}
+              >
+                Enviar Inscripción
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>
